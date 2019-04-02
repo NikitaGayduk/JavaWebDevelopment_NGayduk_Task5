@@ -21,18 +21,11 @@ public class CallCenter {
     private class Operator implements Runnable {
         private Thread operatorThread = new Thread(this);
         private int operatorId;
+        private Client client;
 
         public Operator(int operatorId){
             this.operatorId = operatorId;
             operatorThread.start();
-        }
-
-        public void solveProblem(int solvingTimeSeconds){
-            try{
-                TimeUnit.SECONDS.sleep(solvingTimeSeconds);
-            } catch (InterruptedException e){
-                LOGGER.trace("Operator " + operatorId + " work was interrupted");
-            }
         }
 
         public int getOperatorId() {
@@ -43,10 +36,23 @@ public class CallCenter {
         public void run() {
             while(true){
                 try {
-                    Thread.sleep(1000);
-                    //LOGGER.trace("Operator " + operatorId +" awaiting for client");
+                    client = clientsQueue.take();
+                    client.getLock().lock();
+
+                    if(client.getState() == Client.State.AWAITING){
+                        LOGGER.trace("Operator " + operatorId + " get client " + client.getClientId());
+                        client.setState(Client.State.BEING_PROCESSED);
+                        TimeUnit.SECONDS.sleep(client.getProblemSolvingTimeSeconds());
+                        LOGGER.trace("Operator " + operatorId + " finish work with client " + client.getClientId());
+                        client.setState(Client.State.NO_AWAITING);
+                    } else {
+                        LOGGER.trace("Operator " + operatorId + " cant process client " + client.getClientId()
+                                + ", this client already leave the queue");
+                    }
+
+                    client.getLock().unlock();
                 } catch (InterruptedException e){
-                    LOGGER.trace("Operator work interrupted");
+                    LOGGER.trace("Operator " + operatorId + " was interrupted while waiting client");
                 }
             }
         }
@@ -64,7 +70,7 @@ public class CallCenter {
     public void call(Client client){
         try {
             clientsQueue.put(client);
-            client.setAwaiting(true);
+            client.setState(Client.State.AWAITING);
         } catch (InterruptedException e){
             LOGGER.trace("Client's " + client.getClientId() + "call was interrupted");
         }

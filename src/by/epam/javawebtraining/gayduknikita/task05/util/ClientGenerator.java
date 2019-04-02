@@ -1,4 +1,4 @@
-package by.epam.javawebtraining.gayduknikita.task05.model.util;
+package by.epam.javawebtraining.gayduknikita.task05.util;
 
 import by.epam.javawebtraining.gayduknikita.task05.model.entity.CallCenter;
 import by.epam.javawebtraining.gayduknikita.task05.model.entity.Client;
@@ -14,18 +14,16 @@ import java.util.concurrent.TimeUnit;
 public class ClientGenerator implements Runnable {
     private static final Logger LOGGER = Logger.getRootLogger();
 
-    private static final int MAX_GENERATION_PAUSE_SECONDS = 10;
-    private static final int MIN_GENERATION_PAUSE_SECONDS = 3;
-    private static final int MAX_WAITING_SECONDS = 20;
+    private static final int MAX_GENERATION_PAUSE_SECONDS = 2;
+    private static final int MIN_GENERATION_PAUSE_SECONDS = 1;
+    private static final int MAX_WAITING_SECONDS = 15;
     private static final int MIN_WAITING_SECONDS = 5;
-    private static final int MAX_SOLVING_TIME_SECONDS = 5;
-    private static final int MIN_SOLVING_TIME_SECONDS = 3;
-
+    private static final int MAX_SOLVING_TIME_SECONDS = 10;
+    private static final int MIN_SOLVING_TIME_SECONDS = 5;
 
     private static final Random random = new Random();
 
-
-    private Thread thread = new Thread(this);
+    private final Thread thread = new Thread(this);
     private CallCenter callCenter;
 
     public ClientGenerator(CallCenter callCenter){
@@ -36,7 +34,7 @@ public class ClientGenerator implements Runnable {
     @Override
     public void run() {
         while (!thread.isInterrupted()){
-            callCenter.call(new Client(getWaitingTime(),getSolvingTime()));
+            new Client(getWaitingTime(),getSolvingTime(),callCenter);
 
             try {
                 Thread.sleep(TimeUnit.SECONDS.toMillis(getPauseTime()));
